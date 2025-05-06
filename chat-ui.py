@@ -28,7 +28,7 @@ ALLOWED_FILE_TYPES = [
     ('Documents', '*.doc *.docx'),
     ('All files', '*.*')  
 ]
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+MAX_FILE_SIZE = 5 * 1024 * 1024 
 
 class ChatApp:
     def __init__(self, root):
@@ -48,7 +48,6 @@ class ChatApp:
         self.chatroom_manager = ChatroomManager()
         self.controller = NodeController()
         
-        # Default state
         self.node_address = None
         self.current_user = None
         self.selected_chatroom = None
@@ -60,7 +59,6 @@ class ChatApp:
     
         self.setup_login_ui()
         
-        # Start polling thread 
         self.polling_active = False
     
     def get_local_ip(self):
@@ -71,7 +69,7 @@ class ChatApp:
             ip = s.getsockname()[0]
             return f"{ip}:7091"
         except Exception:
-            return "127.0.0.1:7091"  # Fallback to localhost
+            return "127.0.0.1:7091"  # Fallback to localhost, CHANGE LATER
         finally:
             s.close()
     
@@ -98,7 +96,6 @@ class ChatApp:
         self.password_entry = ctk.CTkEntry(login_form, width=200, show="*")
         self.password_entry.grid(row=1, column=1, padx=10, pady=10)
         
-        # Node address
         address_label = ctk.CTkLabel(login_form, text="Node Address:")
         address_label.grid(row=2, column=0, padx=10, pady=10, sticky="w")
         self.address_entry = ctk.CTkEntry(login_form, width=200)
@@ -125,17 +122,11 @@ class ChatApp:
             self.current_user = self.user_manager.get_current_user()
             self.node_address = node_address
             
-            # Update user's node address
             host, port = node_address.split(":")
             self.user_manager.update_user_address(username, host, port)
             
-            # Submit info to tracker
-            self.controller.submit_info(node_address)
-            
-            # Start polling for responses
+            self.controller.submit_info(node_address)           
             self.start_polling()
-            
-            # Load main UI
             self.setup_main_ui()
         else:
             messagebox.showerror("Login Failed", message)
@@ -164,11 +155,9 @@ class ChatApp:
         self.main_frame = ctk.CTkFrame(self.root)
         self.main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Create sidebar for chatrooms and users
         self.sidebar = ctk.CTkFrame(self.main_frame, width=200)
         self.sidebar.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
         
-        # User info section
         user_frame = ctk.CTkFrame(self.sidebar)
         user_frame.pack(fill=tk.X, padx=5, pady=5)
         
@@ -178,7 +167,6 @@ class ChatApp:
         node_label = ctk.CTkLabel(user_frame, text=f"Node: {self.node_address}")
         node_label.pack(pady=5)
         
-        # Buttons for creating chatrooms and initiating DMs
         button_frame = ctk.CTkFrame(self.sidebar)
         button_frame.pack(fill=tk.X, padx=5, pady=5)
         
@@ -191,27 +179,21 @@ class ChatApp:
         logout_btn = ctk.CTkButton(button_frame, text="Logout", command=self.logout)
         logout_btn.pack(fill=tk.X, pady=5)
         
-        # Tabview for Chatrooms and Users
         self.tab_view = ctk.CTkTabview(self.sidebar)
         self.tab_view.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
-        # Create tabs
         self.tab_view.add("Chatrooms")
         self.tab_view.add("Users")
         
-        # Chatrooms list
         self.chatrooms_frame = ctk.CTkScrollableFrame(self.tab_view.tab("Chatrooms"))
         self.chatrooms_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Users list
         self.users_frame = ctk.CTkScrollableFrame(self.tab_view.tab("Users"))
         self.users_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Chat content area
         self.content_frame = ctk.CTkFrame(self.main_frame)
         self.content_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
         
-        # Welcome message when no chat is selected
         self.welcome_frame = ctk.CTkFrame(self.content_frame)
         self.welcome_frame.pack(fill=tk.BOTH, expand=True)
         
@@ -229,22 +211,17 @@ class ChatApp:
         )
         instruction_label.pack()
         
-        # Chat frame (initially hidden)
         self.chat_frame = ctk.CTkFrame(self.content_frame)
         
-        # Load initial data
         self.refresh_all()
     
     def refresh_all(self):
-        """Refresh chatrooms and users lists"""
-        # Clear existing lists
         for widget in self.chatrooms_frame.winfo_children():
             widget.destroy()
         
         for widget in self.users_frame.winfo_children():
             widget.destroy()
         
-        # Refresh chatrooms
         user_chatrooms = self.chatroom_manager.get_user_chatrooms(self.current_user['username'])
         for chatroom in user_chatrooms:
             room_btn = ctk.CTkButton(
@@ -256,7 +233,6 @@ class ChatApp:
             room_btn.pack(fill=tk.X, pady=2)
             self.chatrooms[chatroom['id']] = chatroom
         
-        # Refresh users
         all_users = self.user_manager.get_all_users()
         for user in all_users:
             if user['username'] != self.current_user['username']:
@@ -270,7 +246,6 @@ class ChatApp:
                 self.peers[user['username']] = user
     
     def create_chatroom_dialog(self):
-        """Show dialog to create a new chatroom"""
         dialog = ctk.CTkInputDialog(text="Enter chatroom name:", title="Create Chatroom")
         room_name = dialog.get_input()
         
@@ -287,31 +262,25 @@ class ChatApp:
                 messagebox.showerror("Error", message)
     
     def select_chatroom(self, chatroom_id):
-        """Select a chatroom and display its messages"""
         self.selected_chatroom = chatroom_id
         self.selected_peer = None
         self.show_chat_area()
         
-        # Set chatroom title
         chatroom = self.chatrooms.get(chatroom_id)
         if chatroom:
             self.chat_title_label.configure(text=f"Chatroom: {chatroom['name']}")
             
-            # Add members to dropdown
             self.member_var.set("Members")
             self.member_menu.configure(values=[
                 f"{member}" for member in chatroom['members']
             ])
             
-            # Load messages
             self.load_chatroom_messages(chatroom_id)
     
     def start_direct_message(self, username):
-        """Start or continue a direct message with a user"""
         self.selected_peer = username
         self.selected_chatroom = None
         
-        # Create or get DM chatroom
         chatroom_id, is_new = self.chatroom_manager.create_direct_message(
             self.current_user['username'],
             username
@@ -321,42 +290,34 @@ class ChatApp:
             self.selected_chatroom = chatroom_id
             self.show_chat_area()
             
-            # Set chat title
             self.chat_title_label.configure(text=f"Chat with: {username}")
             
-            # Set member dropdown
             self.member_var.set("Members")
             self.member_menu.configure(values=[
                 self.current_user['username'],
                 username
             ])
             
-            # Load messages
             self.load_chatroom_messages(chatroom_id)
         else:
             messagebox.showerror("Error", "Could not create direct message")
     
     def show_chat_area(self):
-        """Show the chat area and hide welcome message"""
         self.welcome_frame.pack_forget()
         
-        # If chat frame already exists, just show it
         if hasattr(self, 'chat_frame') and self.chat_frame.winfo_children():
             self.chat_frame.pack(fill=tk.BOTH, expand=True)
             return
         
-        # Otherwise create the chat area
         self.chat_frame = ctk.CTkFrame(self.content_frame)
         self.chat_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Chat header
         header_frame = ctk.CTkFrame(self.chat_frame)
         header_frame.pack(fill=tk.X, padx=10, pady=5)
         
         self.chat_title_label = ctk.CTkLabel(header_frame, text="Chat", font=("Helvetica", 16, "bold"))
         self.chat_title_label.pack(side=tk.LEFT, padx=10)
         
-        # Members dropdown
         self.member_var = tk.StringVar()
         self.member_var.set("Members")
         
@@ -368,15 +329,12 @@ class ChatApp:
         )
         self.member_menu.pack(side=tk.RIGHT, padx=10)
         
-        # Messages area
         self.messages_frame = ctk.CTkScrollableFrame(self.chat_frame)
         self.messages_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
-        # Input area
         input_frame = ctk.CTkFrame(self.chat_frame)
         input_frame.pack(fill=tk.X, padx=10, pady=10)
         
-        # Attachment button
         self.attach_btn = ctk.CTkButton(
             input_frame, 
             text="📎", 
@@ -385,11 +343,9 @@ class ChatApp:
         )
         self.attach_btn.pack(side=tk.LEFT, padx=5)
         
-        # Message input
         self.message_input = ctk.CTkTextbox(input_frame, height=40)
         self.message_input.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
         
-        # Send button
         self.send_btn = ctk.CTkButton(
             input_frame, 
             text="Send", 
@@ -398,38 +354,29 @@ class ChatApp:
         )
         self.send_btn.pack(side=tk.RIGHT, padx=5)
         
-        # File attachment indicator
         self.file_frame = ctk.CTkFrame(self.chat_frame)
         self.file_label = None
         self.attached_file = None
     
     def load_chatroom_messages(self, chatroom_id):
-        """Load and display messages for the selected chatroom"""
-        # Clear existing messages
         for widget in self.messages_frame.winfo_children():
             widget.destroy()
         
-        # Get messages
         messages = self.chatroom_manager.get_messages(chatroom_id, limit=50)
         
-        # Sort messages by timestamp (oldest first)
         messages.sort(key=lambda x: x['timestamp'])
         
-        # Display messages
         for msg in messages:
             self.display_message(msg)
     
     def display_message(self, message):
-        """Display a single message in the chat"""
         is_own_message = message['sender'] == self.current_user['username']
         
-        # Create message frame
         msg_frame = ctk.CTkFrame(
             self.messages_frame,
             fg_color=("lightblue" if is_own_message else "#f0f0f0")
         )
         
-        # Align messages to right if own message, left otherwise
         if is_own_message:
             msg_frame.pack(anchor=tk.E, fill=tk.X, padx=10, pady=5)
         else:
@@ -450,7 +397,6 @@ class ChatApp:
         time_label = ctk.CTkLabel(header_frame, text=timestamp, font=("Helvetica", 10))
         time_label.pack(side=tk.RIGHT)
         
-        # Message content
         if message['type'] == 'text':
             content_label = ctk.CTkLabel(
                 msg_frame, 
@@ -482,7 +428,6 @@ class ChatApp:
             download_btn.pack(side=tk.RIGHT, padx=5)
     
     def send_message(self):
-        """Send a message to the current chatroom or user"""
         if not self.selected_chatroom:
             messagebox.showerror("Error", "No chatroom selected")
             return
@@ -494,18 +439,14 @@ class ChatApp:
             return
         
         if self.attached_file:
-            # Handle file message
             filename = os.path.basename(self.attached_file)
             file_size = os.path.getsize(self.attached_file)
             
-            # Read file content
             with open(self.attached_file, 'rb') as f:
                 file_content = f.read()
             
-            # Base64 encode file for storage
             file_b64 = base64.b64encode(file_content).decode('utf-8')
             
-            # Create file info
             file_info = {
                 'filename': filename,
                 'size': file_size,
@@ -513,7 +454,6 @@ class ChatApp:
                 'mime_type': self.get_mime_type(filename)
             }
             
-            # Add file message to chatroom
             success, message, msg_data = self.chatroom_manager.add_message(
                 self.selected_chatroom,
                 self.current_user['username'],
@@ -522,42 +462,35 @@ class ChatApp:
                 file_info=file_info
             )
             
-            # Clear attached file indicator
             self.clear_attachment()
             
         elif message_text:
-            # Handle text message
             success, message, msg_data = self.chatroom_manager.add_message(
                 self.selected_chatroom,
                 self.current_user['username'],
                 message_text
             )
             
-            # Log chat message
             self.logger.chat_message(
                 self.current_user['username'],
                 self.selected_chatroom,
                 message_text
             )
         
-        # Clear input
         self.message_input.delete("1.0", tk.END)
         
-        # Reload messages
         if success:
             self.load_chatroom_messages(self.selected_chatroom)
         else:
             messagebox.showerror("Error", message)
     
     def attach_file(self):
-        """Open file dialog to attach a file"""
         file_path = filedialog.askopenfilename(
             title="Select a file to send",
             filetypes=ALLOWED_FILE_TYPES
         )
         
         if file_path:
-            # Check file size
             file_size = os.path.getsize(file_path)
             if file_size > MAX_FILE_SIZE:
                 messagebox.showerror(
@@ -566,21 +499,15 @@ class ChatApp:
                 )
                 return
             
-            # Store file path
             self.attached_file = file_path
             
-            # Show file attachment indicator
             self.show_attachment(file_path)
     
     def show_attachment(self, file_path):
-        """Show file attachment indicator"""
-        # Remove existing attachment indicator if any
         self.clear_attachment()
         
-        # Show file frame
         self.file_frame.pack(fill=tk.X, padx=10, pady=5)
         
-        # File info
         file_name = os.path.basename(file_path)
         file_size = os.path.getsize(file_path) / 1024  # KB
         
@@ -677,7 +604,6 @@ class ChatApp:
         if selected_member == "Members":
             return
         
-        # Show user info or options
         if self.selected_chatroom:
             messagebox.showinfo("User Info", f"Username: {selected_member}")
     
@@ -700,7 +626,6 @@ class ChatApp:
         self.polling_thread.start()
     
     def process_node_response(self, response):
-        """Process responses from the node"""
         try:
             command, data = response.split(':', 1)
             
@@ -720,5 +645,34 @@ class ChatApp:
         except Exception as e:
             self.logger.error(f"Error processing node response: {str(e)}")
     
-    def logout(self):\
-        if self.current_
+    def logout(self):
+        if self.current_user:
+            if messagebox.askyesno("Quit", "Are you sure you want to quit?"):
+                self.polling_active = False
+                if hasattr(self, 'polling_thread'):
+                    self.polling_thread.join(1.0)
+                
+                if self.node_address:
+                    self.controller.exit_node(self.node_address)
+                
+                self.logger.system("Application closed", {"session_id": self.session_id})
+                
+                self.root.destroy()
+        else:
+            self.root.destroy()
+
+    def on_close(self):
+        if self.node_address:
+            self.controller.exit_node(self.node_address)
+        
+        self.polling_active = False
+        
+        self.root.destroy()
+
+    def run(self):
+        self.root.mainloop()
+
+if __name__ == "__main__":
+    root = ctk.CTk()
+    app = ChatApp(root)
+    app.run()
